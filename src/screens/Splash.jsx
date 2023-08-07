@@ -1,13 +1,13 @@
 import React, { useEffect } from "react";
-import { useNavigate, Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import useAuthentication from "../hooks/useAuthentication";
 
 const Splash = () => {
   const navigate = useNavigate();
-  const { user } = useAuthentication();
+  const { session } = useAuthentication();
   useEffect(() => {
     const checkFirstLogin = () => {
-      user
+      session
         ? navigate("/home", { replace: true })
         : navigate("/Welcome", { replace: true });
     };

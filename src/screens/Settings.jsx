@@ -1,13 +1,14 @@
 import React from "react";
-import { signOut } from "firebase/auth";
-import { auth } from "../../firebaseConfig";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../supabase";
 
 const Settings = () => {
   const navigate = useNavigate();
   const logOut = async () => {
-    await signOut(auth);
-    navigate("/Welcome", { replace: true });
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      navigate("/Welcome", { replace: true });
+    }
   };
   return (
     <div>

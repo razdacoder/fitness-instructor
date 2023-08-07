@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import routines from "./../data/routines.js";
-import homeData from "./../data/homeData.js";
-import { Link, useParams } from "react-router-dom";
 import { MdArrowBack } from "react-icons/md";
+import { Link, useParams } from "react-router-dom";
+import homeData from "./../data/homeData.js";
+import routines from "./../data/routines.js";
 
 const Routine = () => {
   const { p_id } = useParams();
@@ -40,7 +40,7 @@ const Routine = () => {
         </span>
       </div>
       {routineItems?.data.map((data, index) => (
-        <div className="flex border-b ">
+        <div key={index} className="flex border-b ">
           <img src={data.image} alt="Image" width={150} height={150} />
           <div className="flex flex-col  justify-center">
             <h4 className="text-2xl">{data.routineName}</h4>

@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { collection, addDoc, doc, getDoc } from "firebase/firestore";
-import { db, auth } from "../../firebaseConfig";
+
 import { useDispatch } from "react-redux";
-import { setUser } from "../slices/authSlice";
+import { supabase } from "../../supabase";
 import Spinner from "../components/Spinner";
+import { setUser } from "../slices/authSlice";
 
 const Register = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+  const [err, setError] = useState(null);
   const [formData, setformData] = useState({
     name: "",
     email: "",
@@ -21,34 +21,38 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     const { name, email, password } = formData;
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredential.user;
-      await addDoc(collection(db, "users"), {
-        uid: user.uid,
-        name,
-        email,
-      });
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-
-      dispatch(
-        setUser({
-          uid: docSnap.id,
-          ...docSnap.data(),
-        })
-      );
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+        },
+      },
+    });
+    if (error) {
+      setError(error.message);
       setLoading(false);
-      navigate("/home", { replace: true });
-    } catch (error) {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      console.error(errorCode, errorMessage);
+      return;
     }
+
+    let { data: profiles, error: profileErr } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", data.user.id);
+
+    if (profileErr) {
+      setError(profileErr.message);
+      setLoading(false);
+      return;
+    }
+    const User = {
+      user: data.user,
+      profile: profiles[0],
+    };
+    dispatch(setUser(User));
+    setLoading(false);
+    navigate("/home", { replace: true });
   };
   return (
     <div className="w-full h-screen bg-[#DE5D58]  flex flex-col justify-center items-center">
@@ -56,8 +60,9 @@ const Register = () => {
         <img src={"/assets/defaults/logo.png"} width={100} height={100} />
       </div>
 
-      <div className=" h-4/6">
+      <div className="h-4/6">
         <h4 className="text-white text-5xl mb-8 font-bold">Register</h4>
+        <p>{err}</p>
         <form className="flex flex-col gap-y-3" onSubmit={submit}>
           <div className="mb-1">
             <label
@@ -124,7 +129,7 @@ const Register = () => {
               type="submit"
               className="bg-white w-full block text-[#DE5D58] font-medium px-32 py-3 text-2xl rounded-md"
             >
-              {loading ? <Spinner /> : "Register"}
+              {loading ? "..." : "Register"}
             </button>
           </div>
         </form>

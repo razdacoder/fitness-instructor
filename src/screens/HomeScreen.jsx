@@ -1,13 +1,18 @@
 import React from "react";
-import homeData from "./../data/homeData.js";
-import { Link } from "react-router-dom";
 import { MdPerson } from "react-icons/md";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { selectUser } from "../slices/authSlice.js";
+import homeData from "./../data/homeData.js";
 
 const HomeScreen = () => {
+  const user = useSelector(selectUser);
   return (
     <div className="bg-[#F8F8F8] py-5 px-2">
       <div className="border-b border-gray-200 mb-5 pb-5 flex justify-between items-center">
-        <h3 className="font-bold text-3xl">Welcome</h3>
+        <h3 className="font-bold text-xl">
+          Welcome, {user.profile.full_name.split(" ")[0]}
+        </h3>
         <MdPerson size={30} />
       </div>
 

@@ -1,16 +1,16 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { getDoc, doc } from "firebase/firestore";
-import { db, auth } from "../../firebaseConfig";
 import { useDispatch } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../../supabase";
 import { setUser } from "../slices/authSlice";
 import Spinner from "./../components/Spinner";
 
+// 328SPAEjFdgK22sT
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [err, setError] = useState(null);
   const [formData, setformData] = useState({
     email: "",
     password: "",
@@ -19,28 +19,34 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     const { email, password } = formData;
-    try {
-      const userCredentials = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      const user = userCredentials.user;
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-      dispatch(
-        setUser({
-          uid: docSnap.id,
-          ...docSnap.data(),
-        })
-      );
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      setError(error.message);
       setLoading(false);
-      navigate("/home", { replace: true });
-    } catch (err) {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      console.log(errorCode, errorMessage);
+      return;
     }
+
+    let { data: profiles, error: profileErr } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", data.user.id);
+
+    if (profileErr) {
+      setError(profileErr.message);
+      setLoading(false);
+      return;
+    }
+    const User = {
+      user: data.user,
+      profile: profiles[0],
+    };
+    dispatch(setUser(User));
+    setLoading(false);
+    navigate("/home", { replace: true });
   };
   return (
     <div className="w-full h-screen bg-[#DE5D58]  flex flex-col justify-center items-center">
@@ -50,6 +56,7 @@ const Login = () => {
 
       <div className=" h-4/6">
         <h4 className="text-white text-5xl mb-8 font-bold">Login</h4>
+        <p className="text-white">{err}</p>
         <form className="flex flex-col gap-y-3" onSubmit={onLogin}>
           <div className="mb-1">
             <label
@@ -96,7 +103,7 @@ const Login = () => {
               type="submit"
               className="bg-white w-full block text-[#DE5D58] font-medium px-32 py-3 text-2xl rounded-md"
             >
-              {loading ? <Spinner /> : "Login"}
+              {loading ? "..." : "Login"}
             </button>
           </div>
         </form>

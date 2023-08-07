@@ -1,32 +1,25 @@
-import React, { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { useSelector, useDispatch } from "react-redux";
-import { selectUser, setUser } from "../slices/authSlice";
-
-import { auth, db } from "../../firebaseConfig";
+import { useEffect, useState } from "react";
+import { supabase } from "../../supabase";
 
 const useAuthentication = () => {
-  const user = useSelector(selectUser);
-  const dispatch = useDispatch();
+  const [session, setSession] = useState(null);
   useEffect(() => {
-    const unsubscribeFromAuthStatuChanged = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        dispatch(
-          setUser({
-            uid: user.uid,
-            email: user.email,
-            accessToken: user.accessToken,
-          })
-        );
-      } else {
-        dispatch(setUser(null));
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
     });
-
-    return unsubscribeFromAuthStatuChanged;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
-  return { user };
+  if (session) {
+    return session;
+  }
+
+  return false;
 };
 
 export default useAuthentication;
