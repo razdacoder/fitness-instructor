@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react";
-import routines from "./../data/routines.js";
-import homeData from "./../data/homeData.js";
-import { Link, useNavigate, useParams } from "react-router-dom";
 import { MdArrowBack } from "react-icons/md";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Timer from "../components/Timer.jsx";
+import homeData from "./../data/homeData.js";
+import routines from "./../data/routines.js";
 
+const voice = window.speechSynthesis.getVoices()[0];
 const WorkOut = () => {
+  const msg = new SpeechSynthesisUtterance();
   const { id } = useParams();
   const navigate = useNavigate();
   const [routineItems, setroutineItems] = useState(null);
+  const [ourText, setOurText] = useState("");
   const [routineId, setroutineId] = useState(1);
   const [rest, setRest] = useState(false);
   const [counter, setCounter] = useState(0);
@@ -26,13 +29,23 @@ const WorkOut = () => {
   //   };
 
   useEffect(() => {
-    counter > 0
-      ? setTimeout(() => setCounter(counter - 1), 1000)
-      : setRest(false);
+    msg.text = ourText;
+    window.speechSynthesis.speak(msg);
+  }, [ourText]);
+
+  const runner = () => {
+    setRest(false);
+    setOurText(
+      `Perform a ${routineItems?.data[routineId]?.routineName} 10 times`
+    );
+  };
+  useEffect(() => {
+    counter > 0 ? setTimeout(() => setCounter(counter - 1), 1000) : runner();
     return clearTimeout();
   }, [counter]);
 
   const nextRoutine = () => {
+    setOurText("Take a 20 seconds rest.");
     setRest(true);
     setCounter(20);
     setroutineId(routineId + 1);
